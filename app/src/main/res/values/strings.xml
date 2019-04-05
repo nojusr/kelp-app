@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">kelp\'s place</string>
+    <string name="main_image_logo">Main Image logo</string>
+    <string name="username">Name</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="title_activity_main">Main</string>
+    <string name="tab_text_1">upload</string>
+    <string name="tab_text_2">uploads</string>
+    <string name="tab_text_3">paste</string>
+    <string name="tab_text_4">pastes</string>
+    <string name="tab_text_5">profile</string>
+    <string name="upload">click here to upload</string>
+    <string name="paste_title">Title</string>
+    <string name="paste_confirm">paste</string>
+    <string name="paste_main_text_hint">Your text here.....</string>
+</resources>
