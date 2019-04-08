@@ -45,6 +45,7 @@
                 android:layout_marginBottom="10dp"
                 android:layout_weight="1"
                 android:background="@drawable/ic_button"
+                android:onClick="Paste"
                 android:text="@string/paste_confirm" />
         </LinearLayout>
 
@@ -58,7 +59,7 @@
             android:layout_height="644dp"
             android:background="@color/background"
             android:ems="10"
-            android:gravity="top|left"
+            android:gravity="start|top"
             android:hint="@string/paste_main_text_hint"
             android:inputType="textMultiLine" />
 

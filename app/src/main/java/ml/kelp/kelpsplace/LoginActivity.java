@@ -33,7 +33,6 @@ public class LoginActivity extends AppCompatActivity {
     Button   login_button;
 
     RequestQueue requestQueue;
-
     String ApiEndpoint;
 
     @Override
@@ -67,7 +66,6 @@ public class LoginActivity extends AppCompatActivity {
 
     public void Login(View view){
 
-        Log.d("INPUT-TEST", "-------------------------------------------------");
 
         final String username_input   = ((EditText)findViewById(R.id.input_username)).getText().toString();
         final String password_input   = ((EditText)findViewById(R.id.input_password)).getText().toString();
@@ -125,7 +123,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onErrorResponse(VolleyError error) {
                 Context context = getApplicationContext();
                 int duration = Toast.LENGTH_SHORT;
-                Toast toast = Toast.makeText(context, "networking error" , duration);
+                Toast toast = Toast.makeText(context, "Networking error occured" , duration);
                 toast.show();
                 Log.e("Volley", "Error");
 

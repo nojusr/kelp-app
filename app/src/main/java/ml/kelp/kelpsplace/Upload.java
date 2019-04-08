@@ -1,8 +1,5 @@
 package ml.kelp.kelpsplace;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -14,11 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 
-import android.util.Log;
-import android.view.animation.DecelerateInterpolator;
 import android.webkit.URLUtil;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -58,9 +51,7 @@ public class Upload extends AppCompatActivity {
             handleIntentUpload(intent);
         }
 
-        Intent i = new Intent(Upload.this, MainActivity.class);
-        finish();  //Kill the activity from which you will go to next activity
-        startActivity(i);
+        finish();
 
         super.onCreate(savedInstanceState);
 
