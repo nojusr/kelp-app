@@ -10,11 +10,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 
 import android.support.v4.app.Fragment;
@@ -24,9 +26,15 @@ import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 
 
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Gravity;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.animation.DecelerateInterpolator;
@@ -74,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
 
     RequestQueue requestQueue;
     String ApiEndpoint;
+    View rowClicked;
+    RecyclerView FileList;
+    FileObjAdapter FileAdp;
 
     // tabs
 
@@ -111,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
+        FileAdp = new FileObjAdapter();
 
 
 
@@ -128,27 +139,44 @@ public class MainActivity extends AppCompatActivity {
         tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
 
+        final Context context = getApplicationContext();
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 2){
+                    FileList = (RecyclerView) findViewById(R.id.file_layout);
+                    FileList.setLayoutManager(new LinearLayoutManager(context));
+                    FileList.setAdapter(FileAdp);
                     FillViewUploads();
+
                 }
             }
 
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {
+                if (tab.getPosition() == 2){
+                    FileList = (RecyclerView) findViewById(R.id.file_layout);
+                    FileList.setVisibility(View.GONE);
 
+                }
             }
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 2){
+                    FileList = (RecyclerView) findViewById(R.id.file_layout);
+                    FileList.setLayoutManager(new LinearLayoutManager(context));
+                    FileList.setAdapter(FileAdp);
                     FillViewUploads();
+
                 }
             }
         });
+
+
+
+
     }
 
 
@@ -208,22 +236,73 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    //convert dp to px for dynamic views
+    public static int dpToPx(int dp)
+    {
+        return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
+    }
+
+    //context menu related
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+
+        if (tabLayout.getSelectedTabPosition() == 2) {
+
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.file_menu, menu);
+            rowClicked = v;
+        }
+    }
+
+    // File/Paste context menu results
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch(item.getItemId())
+        {
+            case R.id.deleteFile:
+                String fileId = rowClicked.getTag().toString();
+                DeleteFile(fileId, rowClicked);
+                break;
+        }
+
+        return super.onContextItemSelected(item);
+    }
+
+
     // Fill out ViewUploads
+
 
     public void FillViewUploads(){
         SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
 
+        final Context context = getApplicationContext();
+
         final String ApiKey = sharedPreferences.getString("apikey", "null");
 
-        ApiEndpoint = "https://kelp.ml/api/fetch/files";
+        String ApiEndpoint = "https://kelp.ml/api/fetch/files";
 
-        requestQueue = Volley.newRequestQueue(this);
+        RequestQueue requestQueue = Volley.newRequestQueue(context);
 
-        StringRequest fileViewRequest = new StringRequest(Request.Method.POST, ApiEndpoint, new Response.Listener<String>() {
+        final ProgressBar FileProg = findViewById(R.id.file_load_progress);
+
+        FileProg.animate()
+                .alpha(1)
+                .setDuration(200)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        FileProg.setVisibility(View.VISIBLE);
+                    }
+                });
+
+
+        StringRequest fileListRequest = new StringRequest(Request.Method.POST, ApiEndpoint, new Response.Listener<String>() {
+
             @Override
             public void onResponse(String response) {
-                final Context context = getApplicationContext();
-                int duration = Toast.LENGTH_SHORT;
 
                 try {
                     JSONObject jsonObj = new JSONObject(response);
@@ -231,100 +310,51 @@ public class MainActivity extends AppCompatActivity {
 
                     if (success.equals("true")){
 
-                        String fileName = "";
-                        String fileType = "";
+                        String filename = "";
+                        String filetype = "";
+                        String fileid = "";
+
+                        ArrayList<FileObj> fileList = new ArrayList<FileObj>();
 
                         JSONArray files = jsonObj.getJSONArray("files");
                         for (int i = 0; i < files.length(); i++) {
                             JSONObject file = files.getJSONObject(i);
 
-                            fileName = file.getString("org_filename");
-                            final String fileID = file.getString("filename");
+                            filename = file.getString("org_filename");
+                            filetype = file.getString("filetype");
+                            fileid = file.getString("filename");
 
+                            FileObj fobj = new FileObj(fileid, filename, filetype);
 
-
-                            fileType = file.getString("filetype");
-
-                            final TableRow fileRow = new TableRow(context);
-
-
-
-                            TextView buf = new TextView(context);
-                            buf.setText(fileName);
-                            buf.setTextColor(getResources().getColor(R.color.foreground));
-                            buf.setMaxWidth(600);
-                            buf.setEllipsize(TextUtils.TruncateAt.END);
-                            buf.setSingleLine();
-
-
-
-
-
-                            TextView buf2 = new TextView(context);
-                            buf2.setText(fileType);
-                            buf2.setTextColor(getResources().getColor(R.color.foreground));
-                            buf2.setGravity(Gravity.END);
-
-
-                            ImageButton delete = new ImageButton(context);
-
-
-                            delete.setBackground(getResources().getDrawable(R.drawable.ic_delete_button));
-                            delete.setForegroundGravity(Gravity.END);
-
-                            delete.setOnClickListener(new View.OnClickListener(){
-                                @Override
-                                public void onClick(View v){
-
-                                    TableRow curr_row = fileRow;
-
-
-                                    String fileID1 = fileID;//setting to a diff var so it doesn't get reset in loop
-
-                                    DeleteFile(fileID1, requestQueue, ApiKey);
-
-                                    TableLayout fileLayout = findViewById(R.id.file_layout);
-                                    fileLayout.removeView(curr_row);
-
-
-                                }
-                            });
-
-                            fileRow.addView(buf);
-                            fileRow.addView(buf2);
-                            fileRow.addView(delete);
-
-
-                            fileRow.setBackground(getResources().getDrawable(R.drawable.ic_file));
-                            fileRow.setMinimumHeight(120);
-                            fileRow.setGravity(Gravity.CENTER_VERTICAL);
-
-
-
-
-                            TableLayout fileLayout = findViewById(R.id.file_layout);
-
-                            fileLayout.addView(fileRow);
-
-
-
+                            fileList.add(fobj);
                         }
 
 
+                        FileAdp.UpdateAdapter(fileList);
+                        FileAdp.notifyDataSetChanged();
+                        final ProgressBar FileProg = findViewById(R.id.file_load_progress);
+
+                        FileList.setVisibility(View.VISIBLE);
+
+                        FileProg.animate()
+                                .alpha(0)
+                                .setDuration(200)
+                                .setListener(new AnimatorListenerAdapter() {
+                                    @Override
+                                    public void onAnimationEnd(Animator animation) {
+                                        FileProg.setVisibility(View.INVISIBLE);
+                                    }
+                                });
 
 
                     }
                     else{
-                        String Error = jsonObj.getString("reason");
-                        Toast toast = Toast.makeText(context, Error , duration);
-                        toast.show();
+
                     }
 
                 }
                 // Try and catch are included to handle any errors due to JSON
                 catch (JSONException e) {
-                    Toast toast = Toast.makeText(context, "Programming error occured." , duration);
-                    toast.show();
                     // If an error occurs, this prints the error to the log
                     e.printStackTrace();
                 }
@@ -332,10 +362,6 @@ public class MainActivity extends AppCompatActivity {
         }, new Response.ErrorListener() { //Create an error listener to handle errors appropriately.
             @Override
             public void onErrorResponse(VolleyError error) {
-                Context context = getApplicationContext();
-                int duration = Toast.LENGTH_SHORT;
-                Toast toast = Toast.makeText(context, "Networking error occured." , duration);
-                toast.show();
                 Log.e("Volley", error.getMessage());
 
             }
@@ -349,16 +375,29 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        requestQueue.add(fileViewRequest);
+        requestQueue.add(fileListRequest);
+
+
+
+
+
 
 
     }
 
-    public void DeleteFile(String fileID, RequestQueue requestQueue, String apikey){
 
-        final String ApiKey = apikey;
+    public void DeleteFile(String fileID, View fileRow){
+
+        SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
+
+        final String ApiKey = sharedPreferences.getString("apikey", "null");
         final String fileID1 = fileID;
+
+        final View curr_row = fileRow;
+
         ApiEndpoint = "https://kelp.ml/api/upload/delete";
+
+        requestQueue = Volley.newRequestQueue(this);
 
         StringRequest deleteRequest = new StringRequest(Request.Method.POST, ApiEndpoint, new Response.Listener<String>() {
             @Override
@@ -372,6 +411,8 @@ public class MainActivity extends AppCompatActivity {
 
                     if (success.equals("true")){
 
+                        TableLayout fileLayout = findViewById(R.id.file_layout);
+                        fileLayout.removeView(curr_row);
 
                         Toast toast = Toast.makeText(context, "File deleted.", duration);
                         toast.show();
