@@ -62,7 +62,6 @@ public class Upload extends AppCompatActivity {
     private void handleIntentUpload(Intent intent) {
         Uri selectedfile = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
 
-        String p = selectedfile.getPath(); // "/mnt/sdcard/FileName.mp3"
         Context context = getApplicationContext();
         File file=FileUtils.getFile(context, selectedfile);
 

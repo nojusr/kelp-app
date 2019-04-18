@@ -10,9 +10,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -29,26 +29,19 @@ import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.Gravity;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.animation.DecelerateInterpolator;
-import android.view.View.OnClickListener;
 import android.webkit.URLUtil;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.TableRow;
 
 
 import com.android.volley.Request;
@@ -70,10 +63,16 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import androidx.recyclerview.selection.Selection;
+import androidx.recyclerview.selection.SelectionPredicates;
+import androidx.recyclerview.selection.SelectionTracker;
+import androidx.recyclerview.selection.StorageStrategy;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -82,9 +81,15 @@ public class MainActivity extends AppCompatActivity {
 
     RequestQueue requestQueue;
     String ApiEndpoint;
-    View rowClicked;
     RecyclerView FileList;
+
+    // files
     FileObjAdapter FileAdp;
+    FileObjKeyProvider FileKeys;
+    SelectionTracker FileSelectionTracker;
+    SelectionTracker.SelectionObserver FileSelectionObserver;
+    View FileActionSelector;
+    int OldFileCount;
 
     // tabs
 
@@ -123,6 +128,11 @@ public class MainActivity extends AppCompatActivity {
 
 
         FileAdp = new FileObjAdapter();
+        FileKeys = new FileObjKeyProvider();
+        OldFileCount = 0;
+
+
+
 
 
 
@@ -145,10 +155,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 2){
-                    FileList = (RecyclerView) findViewById(R.id.file_layout);
+
+                    FileList =  findViewById(R.id.file_layout);
                     FileList.setLayoutManager(new LinearLayoutManager(context));
-                    FileList.setAdapter(FileAdp);
+
+
                     FillViewUploads();
+
+
 
                 }
             }
@@ -156,8 +170,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 2){
-                    FileList = (RecyclerView) findViewById(R.id.file_layout);
-                    FileList.setVisibility(View.GONE);
+                    FileSelectionTracker.clearSelection();
 
                 }
             }
@@ -165,10 +178,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 2){
-                    FileList = (RecyclerView) findViewById(R.id.file_layout);
+
+                    FileList =  findViewById(R.id.file_layout);
                     FileList.setLayoutManager(new LinearLayoutManager(context));
-                    FileList.setAdapter(FileAdp);
+
                     FillViewUploads();
+
 
                 }
             }
@@ -237,43 +252,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    //convert dp to px for dynamic views
-    public static int dpToPx(int dp)
-    {
-        return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
-    }
 
-    //context menu related
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v,
-                                    ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-
-        if (tabLayout.getSelectedTabPosition() == 2) {
-
-            MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.file_menu, menu);
-            rowClicked = v;
-        }
-    }
-
-    // File/Paste context menu results
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        switch(item.getItemId())
-        {
-            case R.id.deleteFile:
-                String fileId = rowClicked.getTag().toString();
-                DeleteFile(fileId, rowClicked);
-                break;
-        }
-
-        return super.onContextItemSelected(item);
-    }
 
 
     // Fill out ViewUploads
-
 
     public void FillViewUploads(){
         SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
@@ -286,7 +268,9 @@ public class MainActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(context);
 
+
         final ProgressBar FileProg = findViewById(R.id.file_load_progress);
+
 
         FileProg.animate()
                 .alpha(1)
@@ -332,9 +316,11 @@ public class MainActivity extends AppCompatActivity {
 
                         FileAdp.UpdateAdapter(fileList);
                         FileAdp.notifyDataSetChanged();
-                        final ProgressBar FileProg = findViewById(R.id.file_load_progress);
 
+
+                        final ProgressBar FileProg = findViewById(R.id.file_load_progress);
                         FileList.setVisibility(View.VISIBLE);
+
 
                         FileProg.animate()
                                 .alpha(0)
@@ -345,6 +331,118 @@ public class MainActivity extends AppCompatActivity {
                                         FileProg.setVisibility(View.INVISIBLE);
                                     }
                                 });
+
+                        Context con = getApplicationContext();
+
+                        FileList =  findViewById(R.id.file_layout);
+                        FileList.setLayoutManager(new LinearLayoutManager(con));
+
+                        FileList.setAdapter(FileAdp);
+
+                        FileActionSelector =  findViewById(R.id.file_action_select);
+
+                        FileAdp.notifyDataSetChanged();
+
+
+
+
+                        FileKeys.updateData(FileAdp);
+
+                        int filecount = FileAdp.Files.size();
+
+                        if (FileSelectionTracker == null || OldFileCount != filecount) {
+                            Log.d("NEW", "FILE_SEL_TRACKER");
+                            if (FileSelectionTracker == null){
+                                Log.d("NEW", "DUE TO NULL");
+
+                            } else if (OldFileCount != filecount){
+                                Log.d("NEW", "DUE TO DIFF IN FILE COUNT");
+                                Log.d("NEW", "OLDFILECOUNT: "+OldFileCount+" NEWFILECOUNT"+filecount );
+                            }
+
+
+                            FileSelectionTracker = new SelectionTracker.Builder<>("file_selection",
+                                    FileList,
+                                    FileKeys,
+                                    new FileObjDetailLookup(FileList),
+                                    StorageStrategy.createStringStorage())
+                                    .withSelectionPredicate(SelectionPredicates.<String>createSelectAnything())
+                                    .build();
+
+
+
+
+                            final TextView FilesSelected = findViewById(R.id.selected_amount);
+
+
+
+
+
+                            FileSelectionTracker.addObserver(new SelectionTracker.SelectionObserver() {
+
+                                @Override
+                                public void onItemStateChanged(@NonNull Object key, boolean selected) {
+                                    String buf = "";
+                                    if (key.getClass() == FileObj.class) {
+                                        FileObj temp = (FileObj) key;
+                                        buf = temp.getFileID();
+                                    }
+
+                                    super.onItemStateChanged(buf, selected);
+
+
+
+                                }
+
+                                @Override
+                                public void onSelectionChanged() {
+                                    super.onSelectionChanged();
+                                    if (FileSelectionTracker.hasSelection()) {
+                                        FilesSelected.setText(String.format("Selected: %d", FileSelectionTracker.getSelection().size()));
+
+
+                                        FileActionSelector.animate()
+                                                .alpha(1.0f)
+                                                .setDuration(200)
+                                                .setListener(new AnimatorListenerAdapter() {
+                                                    @Override
+                                                    public void onAnimationEnd(Animator animation) {
+                                                        FileActionSelector.setVisibility(View.VISIBLE);
+                                                    }
+                                                });
+
+
+
+
+
+
+                                    } else {
+                                        FilesSelected.setText("Selected: 0");
+                                        FileActionSelector.animate()
+                                                .alpha(0.0f)
+                                                .setDuration(200)
+                                                .setListener(new AnimatorListenerAdapter() {
+                                                    @Override
+                                                    public void onAnimationEnd(Animator animation) {
+                                                        FileActionSelector.setVisibility(View.GONE);
+                                                    }
+                                                });
+
+                                    }
+
+                                }
+
+                            });
+
+                            OldFileCount = filecount;
+                            FileAdp.setSelectionTracker(FileSelectionTracker);
+                        }
+
+
+
+
+
+
 
 
                     }
@@ -386,14 +484,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void DeleteFile(String fileID, View fileRow){
+    public void ClearFileSelect(View view){
+        FileSelectionTracker.clearSelection();
+    }
+
+
+    public void DeleteFileSelect(View view){
+        Selection<String> selFileID = FileSelectionTracker.getSelection();
+
+
+        Iterator<String> selIterator = selFileID.iterator();
+
+        while (selIterator.hasNext()){
+
+            DeleteFile(selIterator.next());
+        }
+
+        FillViewUploads();
+        FileSelectionTracker.clearSelection();
+
+    }
+
+
+    public void DeleteFile(String fileID){
 
         SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
 
         final String ApiKey = sharedPreferences.getString("apikey", "null");
         final String fileID1 = fileID;
-
-        final View curr_row = fileRow;
 
         ApiEndpoint = "https://kelp.ml/api/upload/delete";
 
@@ -411,18 +529,12 @@ public class MainActivity extends AppCompatActivity {
 
                     if (success.equals("true")){
 
-                        TableLayout fileLayout = findViewById(R.id.file_layout);
-                        fileLayout.removeView(curr_row);
-
-                        Toast toast = Toast.makeText(context, "File deleted.", duration);
-                        toast.show();
 
 
                     }
                     else{
                         String Error = jsonObj.getString("reason");
-                        Toast toast = Toast.makeText(context, Error , duration);
-                        toast.show();
+
                     }
 
                 }

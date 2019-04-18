@@ -8,7 +8,7 @@
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/file_layout"
-        android:visibility="gone"
+        android:visibility="visible"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:animateLayoutChanges="false"
@@ -27,5 +27,59 @@
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/file_layout" />
+
+    <LinearLayout
+        android:id="@+id/file_action_select"
+        android:layout_width="415dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:animateLayoutChanges="true"
+        android:background="@color/background"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/selected_amount"
+            android:layout_width="210dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="20dp"
+            android:layout_weight="1"
+            android:gravity="start|center_vertical"
+            android:text="Selected: 0" />
+
+        <ImageButton
+            android:id="@+id/file_sel_delete"
+            android:layout_width="2dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|end"
+            android:layout_weight="1"
+            android:background="@color/background"
+            android:clickable="true"
+            android:contentDescription="hot steaming pile of garbage"
+            android:focusable="true"
+            android:foregroundGravity="center_horizontal"
+            android:onClick="DeleteFileSelect"
+            app:srcCompat="@drawable/ic_delete_button" />
+
+        <ImageButton
+            android:id="@+id/file_sel_clear"
+            android:layout_width="2dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|end"
+            android:layout_weight="1"
+            android:background="@color/background"
+            android:clickable="true"
+            android:contentDescription="hot steaming pile of garbage"
+            android:focusable="true"
+            android:foregroundGravity="center_horizontal"
+            android:onClick="ClearFileSelect"
+            app:srcCompat="@drawable/ic_clear_button" />
+
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
