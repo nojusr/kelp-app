@@ -3,18 +3,26 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/ic_file"
+    android:clickable="true"
     android:gravity="center"
+    android:longClickable="true"
     android:orientation="horizontal"
     android:paddingTop="10dp"
     android:paddingBottom="10dp">
 
     <TextView
         android:id="@+id/file_name"
-        android:layout_width="wrap_content"
+        android:layout_width="277dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:clickable="false"
+        android:ellipsize="end"
         android:gravity="start"
-        android:paddingLeft="24dp" />
+        android:longClickable="false"
+        android:maxWidth="25dp"
+        android:maxLines="1"
+        android:paddingLeft="24dp"
+        android:singleLine="true" />
 
     <TextView
         android:id="@+id/file_type"

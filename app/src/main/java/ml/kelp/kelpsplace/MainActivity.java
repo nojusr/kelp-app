@@ -4,6 +4,7 @@ import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -36,6 +37,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.animation.DecelerateInterpolator;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.URLUtil;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -82,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
     RequestQueue requestQueue;
     String ApiEndpoint;
     RecyclerView FileList;
+    int reqcount;
 
     // files
     FileObjAdapter FileAdp;
@@ -171,8 +174,14 @@ public class MainActivity extends AppCompatActivity {
             public void onTabUnselected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 2){
                     FileSelectionTracker.clearSelection();
-
                 }
+
+                if (tab.getPosition() == 1){
+                    InputMethodManager imm = (InputMethodManager) context.getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    View pastemain = findViewById(R.id.paste_main);
+                    imm.hideSoftInputFromWindow(pastemain.getWindowToken(), 0);
+                }
+
             }
 
             @Override
@@ -256,7 +265,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Fill out ViewUploads
-
     public void FillViewUploads(){
         SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
 
@@ -313,15 +321,6 @@ public class MainActivity extends AppCompatActivity {
                             fileList.add(fobj);
                         }
 
-
-                        FileAdp.UpdateAdapter(fileList);
-                        FileAdp.notifyDataSetChanged();
-
-
-                        final ProgressBar FileProg = findViewById(R.id.file_load_progress);
-                        FileList.setVisibility(View.VISIBLE);
-
-
                         FileProg.animate()
                                 .alpha(0)
                                 .setDuration(200)
@@ -332,33 +331,35 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 });
 
-                        Context con = getApplicationContext();
-
-                        FileList =  findViewById(R.id.file_layout);
-                        FileList.setLayoutManager(new LinearLayoutManager(con));
-
-                        FileList.setAdapter(FileAdp);
-
-                        FileActionSelector =  findViewById(R.id.file_action_select);
-
-                        FileAdp.notifyDataSetChanged();
+                        int filecount = fileList.size();
+                        int listlen = FileList.getChildCount();
 
 
 
 
-                        FileKeys.updateData(FileAdp);
+                        if (FileSelectionTracker == null || OldFileCount != filecount || listlen < 1) {
 
-                        int filecount = FileAdp.Files.size();
 
-                        if (FileSelectionTracker == null || OldFileCount != filecount) {
-                            Log.d("NEW", "FILE_SEL_TRACKER");
-                            if (FileSelectionTracker == null){
-                                Log.d("NEW", "DUE TO NULL");
 
-                            } else if (OldFileCount != filecount){
-                                Log.d("NEW", "DUE TO DIFF IN FILE COUNT");
-                                Log.d("NEW", "OLDFILECOUNT: "+OldFileCount+" NEWFILECOUNT"+filecount );
-                            }
+                            FileAdp.UpdateAdapter(fileList);
+                            FileAdp.notifyDataSetChanged();
+
+                            Context con = getApplicationContext();
+
+                            FileList =  findViewById(R.id.file_layout);
+                            FileList.setLayoutManager(new LinearLayoutManager(con));
+
+                            FileList.setAdapter(FileAdp);
+
+                            FileActionSelector =  findViewById(R.id.file_action_select);
+
+                            FileAdp.notifyDataSetChanged();
+
+
+
+
+                            FileKeys.updateData(FileAdp);
+
 
 
                             FileSelectionTracker = new SelectionTracker.Builder<>("file_selection",
@@ -370,9 +371,8 @@ public class MainActivity extends AppCompatActivity {
                                     .build();
 
 
-
-
                             final TextView FilesSelected = findViewById(R.id.selected_amount);
+
 
 
 
@@ -434,13 +434,15 @@ public class MainActivity extends AppCompatActivity {
 
                             });
 
+
+
+
+
+
+
                             OldFileCount = filecount;
                             FileAdp.setSelectionTracker(FileSelectionTracker);
                         }
-
-
-
-
 
 
 
@@ -483,11 +485,160 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // update file uploads
+    public void UpdateViewUploads(){
+        SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
+
+        final Context context = getApplicationContext();
+
+        final String ApiKey = sharedPreferences.getString("apikey", "null");
+
+        String ApiEndpoint = "https://kelp.ml/api/fetch/files";
+
+        RequestQueue requestQueue = Volley.newRequestQueue(context);
+
+
+        final ProgressBar FileProg = findViewById(R.id.file_load_progress);
+
+
+        FileProg.animate()
+                .alpha(1)
+                .setDuration(200)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        FileProg.setVisibility(View.VISIBLE);
+                    }
+                });
+
+
+        StringRequest fileListRequest = new StringRequest(Request.Method.POST, ApiEndpoint, new Response.Listener<String>() {
+
+            @Override
+            public void onResponse(String response) {
+
+                try {
+                    JSONObject jsonObj = new JSONObject(response);
+                    String success = jsonObj.getString("success");
+
+                    if (success.equals("true")){
+
+                        String filename = "";
+                        String filetype = "";
+                        String fileid = "";
+
+                        ArrayList<FileObj> fileList = new ArrayList<FileObj>();
+
+                        JSONArray files = jsonObj.getJSONArray("files");
+                        for (int i = 0; i < files.length(); i++) {
+                            JSONObject file = files.getJSONObject(i);
+
+                            filename = file.getString("org_filename");
+                            filetype = file.getString("filetype");
+                            fileid = file.getString("filename");
+
+                            FileObj fobj = new FileObj(fileid, filename, filetype);
+
+                            fileList.add(fobj);
+                        }
+
+                        FileProg.animate()
+                                .alpha(0)
+                                .setDuration(200)
+                                .setListener(new AnimatorListenerAdapter() {
+                                    @Override
+                                    public void onAnimationEnd(Animator animation) {
+                                        FileProg.setVisibility(View.INVISIBLE);
+                                    }
+                                });
+
+                        int filecount = fileList.size();
+                        int listlen = FileList.getChildCount();
+
+
+
+
+                        if (FileSelectionTracker == null || OldFileCount != filecount || listlen < 1) {
+
+                            FileAdp.UpdateAdapter(fileList);
+                            FileAdp.notifyDataSetChanged();
+
+                            Context con = getApplicationContext();
+
+                            FileList =  findViewById(R.id.file_layout);
+                            FileList.setLayoutManager(new LinearLayoutManager(con));
+
+                            FileList.setAdapter(FileAdp);
+
+                            FileActionSelector =  findViewById(R.id.file_action_select);
+
+                            FileAdp.notifyDataSetChanged();
+
+                            FileKeys.updateData(FileAdp);
+
+                            OldFileCount = filecount;
+                            FileAdp.setSelectionTracker(FileSelectionTracker);
+                        }
+
+
+
+
+                    }
+                    else{
+
+                    }
+
+                }
+                // Try and catch are included to handle any errors due to JSON
+                catch (JSONException e) {
+                    // If an error occurs, this prints the error to the log
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() { //Create an error listener to handle errors appropriately.
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("Volley", error.getMessage());
+
+            }
+        }) {
+            protected Map<String, String> getParams() {
+                Map<String,String> params = new HashMap<String, String>();
+
+                params.put("api_key", ApiKey);
+
+                return params;
+            }
+        };
+
+        requestQueue.add(fileListRequest);
+
+    }
+
 
     public void ClearFileSelect(View view){
         FileSelectionTracker.clearSelection();
     }
 
+/*
+    public void DownloadFileSelect(View viwe){
+        Selection<String> selFileID = FileSelectionTracker.getSelection();
+
+
+        Iterator<String> selIterator = selFileID.iterator();
+
+        reqcount = 0;
+
+        requestQueue = Volley.newRequestQueue(this);
+
+        while (selIterator.hasNext()){
+            reqcount += 1;
+            DeleteFile(selIterator.next(), requestQueue);
+        }
+
+        FileSelectionTracker.clearSelection();
+    }
+*/
 
     public void DeleteFileSelect(View view){
         Selection<String> selFileID = FileSelectionTracker.getSelection();
@@ -495,18 +646,21 @@ public class MainActivity extends AppCompatActivity {
 
         Iterator<String> selIterator = selFileID.iterator();
 
-        while (selIterator.hasNext()){
+        reqcount = 0;
 
-            DeleteFile(selIterator.next());
+        requestQueue = Volley.newRequestQueue(this);
+
+        while (selIterator.hasNext()){
+            reqcount += 1;
+            DeleteFile(selIterator.next(), requestQueue);
         }
 
-        FillViewUploads();
         FileSelectionTracker.clearSelection();
 
     }
 
 
-    public void DeleteFile(String fileID){
+    public void DeleteFile(String fileID, RequestQueue rq){
 
         SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
 
@@ -515,13 +669,15 @@ public class MainActivity extends AppCompatActivity {
 
         ApiEndpoint = "https://kelp.ml/api/upload/delete";
 
-        requestQueue = Volley.newRequestQueue(this);
+
 
         StringRequest deleteRequest = new StringRequest(Request.Method.POST, ApiEndpoint, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 Context context = getApplicationContext();
                 int duration = Toast.LENGTH_SHORT;
+
+
 
                 try {
                     JSONObject jsonObj = new JSONObject(response);
@@ -545,6 +701,13 @@ public class MainActivity extends AppCompatActivity {
                     // If an error occurs, this prints the error to the log
                     e.printStackTrace();
                 }
+
+                reqcount -= 1;
+
+                if (reqcount == 0){
+                    UpdateViewUploads();
+                }
+
             }
         }, new Response.ErrorListener() { //Create an error listener to handle errors appropriately.
             @Override
@@ -567,7 +730,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        requestQueue.add(deleteRequest);
+        rq.add(deleteRequest);
     }
 
 

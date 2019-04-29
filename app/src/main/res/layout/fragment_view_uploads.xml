@@ -37,20 +37,33 @@
         android:animateLayoutChanges="true"
         android:background="@color/background"
         android:orientation="horizontal"
-        android:visibility="gone"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
         <TextView
             android:id="@+id/selected_amount"
-            android:layout_width="210dp"
+            android:layout_width="179dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginStart="20dp"
             android:layout_weight="1"
             android:gravity="start|center_vertical"
             android:text="Selected: 0" />
+
+        <ImageButton
+            android:id="@+id/file_sel_download"
+            android:layout_width="2dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|end"
+            android:layout_weight="1"
+            android:background="@color/background"
+            android:clickable="true"
+            android:contentDescription="an arrow pointing down at a stick"
+            android:focusable="true"
+            android:foregroundGravity="center_horizontal"
+            app:srcCompat="@drawable/ic_file_download" />
 
         <ImageButton
             android:id="@+id/file_sel_delete"

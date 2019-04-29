@@ -2,7 +2,7 @@
 <resources>
     <color name="foreground">#FFFFFF</color>
     <color name="background">#000000</color>
-    <color name="background_contrast">#222222</color>
+    <color name="background_contrast">#444444</color>
 
     <!--   color for the app bar and other primary UI elements -->
     <color name="colorPrimary">@color/background</color>

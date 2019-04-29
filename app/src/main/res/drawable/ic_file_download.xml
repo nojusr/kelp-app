@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:color="@color/background_contrast"
+tools:targetApi="lollipop">
+
+<item android:id="@android:id/mask">
+    <vector android:height="24dp" android:tint="@color/background_contrast"
+        android:viewportHeight="24.0" android:viewportWidth="24.0"
+        android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+        <path android:fillColor="@color/background_contrast" android:pathData="M19,9h-4V3H9v6H5l7,7 7,-7zM5,18v2h14v-2H5z"/>
+    </vector>
+</item>
+<item
+    android:id="@android:id/background">
+    <vector android:height="24dp" android:tint="@color/foreground"
+        android:viewportHeight="24.0" android:viewportWidth="24.0"
+        android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+        <path android:fillColor="@color/foreground" android:pathData="M19,9h-4V3H9v6H5l7,7 7,-7zM5,18v2h14v-2H5z"/>
+    </vector>
+</item>
+</ripple>
