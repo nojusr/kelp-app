@@ -7,80 +7,78 @@
     android:background="@color/background"
     tools:context=".LoginActivity">
 
-    <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="337dp"
-        android:layout_height="325dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:backgroundTint="@color/background"
-        android:gravity="end"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.448"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView"
-        app:layout_constraintVertical_bias="0.096">
-
-        <EditText
-            android:id="@+id/input_username"
-            style="@style/AppTheme"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:autofillHints="username"
-            android:ems="10"
-            android:hint="@string/username"
-            android:inputType="textPersonName"
-            android:textColor="@color/foreground" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="36dp" />
-
-        <EditText
-            android:id="@+id/input_password"
-            style="@style/AppTheme"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:autofillHints="password"
-            android:ems="10"
-            android:hint="@string/password"
-            android:inputType="textPassword"
-            android:textColor="@color/foreground" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="36dp" />
-
-        <Button
-            android:id="@+id/input_login"
-            android:layout_width="80dp"
-            android:layout_height="36dp"
-            android:background="@drawable/ic_button"
-            android:onClick="Login"
-            android:text="@string/login"
-            tools:layout_editor_absoluteX="34dp"
-            tools:layout_editor_absoluteY="344dp" />
-
-    </LinearLayout>
-
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="334dp"
+        android:layout_width="0dp"
         android:layout_height="150dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="136dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="8dp"
         android:contentDescription="@string/main_image_logo"
         android:scaleType="fitXY"
         android:tint="@color/foreground"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.19"
         app:srcCompat="@drawable/ic_logo" />
+
+    <EditText
+        android:id="@+id/input_username"
+        style="@style/AppTheme"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:autofillHints="username"
+        android:backgroundTint="@color/foreground"
+        android:ems="10"
+        android:hint="@string/username"
+        android:inputType="textPersonName"
+        android:textColor="@color/foreground"
+        android:textColorHighlight="@color/foreground"
+        android:textColorHint="@color/foreground"
+        app:layout_constraintEnd_toEndOf="@+id/imageView"
+        app:layout_constraintStart_toStartOf="@+id/imageView"
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
+    <EditText
+        android:id="@+id/input_password"
+        style="@style/AppTheme"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:autofillHints="password"
+        android:backgroundTint="@color/foreground"
+        android:ems="10"
+        android:hint="@string/password"
+        android:inputType="textPassword"
+        android:textColor="@color/foreground"
+        android:textColorHighlight="@color/foreground"
+        android:textColorHint="@color/foreground"
+        app:layout_constraintEnd_toEndOf="@+id/input_username"
+        app:layout_constraintHorizontal_bias="0.52"
+        app:layout_constraintStart_toStartOf="@+id/input_username"
+        app:layout_constraintTop_toBottomOf="@+id/input_username" />
+
+    <Button
+        android:id="@+id/input_login"
+        android:layout_width="80dp"
+        android:layout_height="36dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/ic_button"
+        android:onClick="Login"
+        android:stateListAnimator="@null"
+        android:text="@string/login"
+        android:textColor="@color/foreground"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/input_password"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/input_password"
+        app:layout_constraintTop_toBottomOf="@+id/input_password"
+        app:layout_constraintVertical_bias="0.0" />
 
 </android.support.constraint.ConstraintLayout>

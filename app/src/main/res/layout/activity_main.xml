@@ -13,15 +13,20 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/appbar_padding_top"
+        android:stateListAnimator="@null"
         android:theme="@style/AppTheme.AppBarOverlay">
 
         <android.support.design.widget.TabLayout
             android:id="@+id/tabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:tabIndicatorColor="@color/foreground"
             app:tabIndicatorHeight="1dp"
             app:tabMinWidth="130dp"
-            app:tabMode="scrollable">
+            app:tabMode="scrollable"
+            app:tabRippleColor="@color/background_contrast"
+            app:tabSelectedTextColor="@color/foreground"
+            app:tabTextColor="@color/foreground">
 
             <android.support.design.widget.TabItem
                 android:id="@+id/tabItem"

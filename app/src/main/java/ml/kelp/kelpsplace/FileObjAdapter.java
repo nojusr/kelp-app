@@ -4,6 +4,10 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -12,10 +16,14 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import androidx.recyclerview.selection.ItemDetailsLookup;
@@ -131,10 +139,40 @@ public class FileObjAdapter extends RecyclerView.Adapter<FileObjAdapter.ViewHold
                         case MotionEvent.ACTION_DOWN:
                             v.setPressed(true);
                             break;
+                        case MotionEvent.ACTION_CANCEL:
+                            if (isSelected){
+                                break;
+                            }
+                            v.setPressed(false);
+                            break;
+
                         case MotionEvent.ACTION_UP:
                             if (isSelected){
                                 break;
                             } else{
+
+                                Context context = v.getContext();
+
+                                String link = "https://kelp.ml/u/"+fileID+"."+filetype.getText();
+
+                                ConstraintLayout fileViewLayout = fileRow.getRootView().findViewById(R.id.file_view);
+                                ImageButton copybt = fileRow.getRootView().findViewById(R.id.copy_file_view);
+                                copybt.setTag(R.id.copy_file_view, link);
+
+                                ImageButton downloadbt = fileRow.getRootView().findViewById(R.id.download_file_view);
+                                downloadbt.setTag(R.id.download_file_view, fileID);
+
+                                fileViewLayout.setVisibility(View.VISIBLE);
+
+
+                                FileLoaderTask fl = new FileLoaderTask(context, link);
+                                fl.execute();
+
+
+                                v.setPressed(false);
+                                break;
+
+                                /*
                                 Context context = v.getContext();
 
                                 String link = "https://kelp.ml/u/"+fileID+"."+filetype.getText();
@@ -150,6 +188,7 @@ public class FileObjAdapter extends RecyclerView.Adapter<FileObjAdapter.ViewHold
                                 toast.show();
                                 v.setPressed(false);
                                 break;
+                                */
                             }
 
                     }

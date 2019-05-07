@@ -1,5 +1,7 @@
 package ml.kelp.kelpsplace;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -7,6 +9,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -28,14 +32,19 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class Upload extends AppCompatActivity {
 
+
+    public String CHANNEL_ID = "kelpml";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        createNotificationChannel();
+
         SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
 
         String ApiChk = sharedPreferences.getString("apikey", "null");
 
         if (ApiChk.equals("null")){
-            Context context = getApplicationContext();
 
             Intent i = new Intent(Upload.this, LoginActivity.class);
             finish();  //Kill the activity from which you will go to next activity
@@ -82,8 +91,42 @@ public class Upload extends AppCompatActivity {
         new UploadFileAsync().execute(path, ApiKey);
     }
 
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
 
     private class UploadFileAsync extends AsyncTask<String, Integer, String> {
+
+        @Override
+        protected void onPreExecute(){
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_logo_smol)
+                    .setContentTitle("kelp's place")
+                    .setContentText("uploading file...")
+                    .setProgress(100, 0, false)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+
+            int notificationID = 414141;
+
+
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(notificationID, builder.build());
+        }
+
+
 
         @Override
         protected String doInBackground(String... params) {
@@ -100,6 +143,9 @@ public class Upload extends AppCompatActivity {
                 byte[] buffer;
                 int maxBufferSize = 1 * 1024 * 1024;
                 File sourceFile = new File(sourceFileUri);
+                int totalSize = (int)sourceFile.length();
+                long progress = 0;
+
 
 
                 if (sourceFile.isFile()) {
@@ -160,6 +206,9 @@ public class Upload extends AppCompatActivity {
 
 
 
+                            progress += bytesRead;
+                            publishProgress((int)((progress*100)/totalSize));
+
                         }
 
                         // send multipart form data necesssary after file
@@ -169,6 +218,7 @@ public class Upload extends AppCompatActivity {
                                 + lineEnd);
 
                         // Responses from the server (code and message)
+
                         int serverResponseCode = conn.getResponseCode();
 
                         if (serverResponseCode == 200) {
@@ -267,7 +317,9 @@ public class Upload extends AppCompatActivity {
             Context context = getApplicationContext();
             int duration = Toast.LENGTH_SHORT;
 
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
+            mNotificationManager.cancel(414141);
 
             // check if asyncthread output is a link; copy link to clipboard if true; show error msg if false
 
@@ -287,6 +339,25 @@ public class Upload extends AppCompatActivity {
                 Toast toast = Toast.makeText(context, result, duration);
                 toast.show();
             }
+
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_logo_smol)
+                    .setContentTitle("kelp's place")
+                    .setContentText("uploading file...")
+                    .setProgress(100, values[0], false)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+
+            int notificationID = 414141;
+
+
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(notificationID, builder.build());
 
         }
 

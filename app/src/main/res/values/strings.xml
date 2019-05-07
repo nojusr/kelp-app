@@ -14,4 +14,6 @@
     <string name="paste_title">Title</string>
     <string name="paste_confirm">paste</string>
     <string name="paste_main_text_hint">Your text here.....</string>
+    <string name="channel_name">kelp.ml</string>
+    <string name="channel_description">kelp\'s place</string>
 </resources>

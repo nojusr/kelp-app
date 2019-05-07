@@ -13,7 +13,10 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
+import android.os.PowerManager;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -40,6 +43,8 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.URLUtil;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TextView;
@@ -61,7 +66,11 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -102,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
     // constants
 
     static final int STORAGE_PERMISSION_REQUEST_CODE = 1;
+    static final int WRITE_STORAGE_PERMISSION_REQUEST_CODE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +127,16 @@ public class MainActivity extends AppCompatActivity {
             startActivity(i);
         }
 
+        if (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // No explanation needed; request the permission
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    WRITE_STORAGE_PERMISSION_REQUEST_CODE);
+        }
+        /*
         // Here, thisActivity is the current activity
         if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -126,8 +146,9 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(MainActivity.this,
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         STORAGE_PERMISSION_REQUEST_CODE);
+        }*/
 
-        }
+
 
 
         FileAdp = new FileObjAdapter();
@@ -256,13 +277,82 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             }
-
+            case WRITE_STORAGE_PERMISSION_REQUEST_CODE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                    // the program cannot run w/o storage permissions!
+                    System.exit(0);
+                }
+                break;
+            }
         }
     }
 
 
+    public void DownloadFileView(View v){
+        ImageButton downloadbt = findViewById(R.id.download_file_view);
+        String fileID = null;
+        try{
+            Object out = downloadbt.getTag(R.id.download_file_view);
+            if (out instanceof String){
+                fileID = (String)out;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        if (fileID != null){
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(getApplicationContext(), "Downloading..." , duration);
+            toast.show();
+            reqcount = 1;
+            new DownloadFile(getApplicationContext()).execute(fileID);
 
 
+        }else{
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(getApplicationContext(), "Failed to download file." , duration);
+            toast.show();
+        }
+    }
+
+    public void CopyFileView(View v){
+        ImageButton copybt = findViewById(R.id.copy_file_view);
+        String link = null;
+        try{
+            Object out = copybt.getTag(R.id.copy_file_view);
+            if (out instanceof String){
+                link = (String)out;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        if (link != null){
+
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("link", link);
+            clipboard.setPrimaryClip(clip);
+
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(getApplicationContext(), "Copied link to clipboard." , duration);
+            toast.show();
+
+        }else{
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(getApplicationContext(), "Failed to get link." , duration);
+            toast.show();
+        }
+    }
+
+
+    public void CloseFileView(View v){
+        ConstraintLayout fileView = findViewById(R.id.file_view);
+        ImageView imgview = findViewById(R.id.file_img_view);
+        fileView.setVisibility(View.GONE);
+        imgview.setVisibility(View.GONE);
+
+    }
 
     // Fill out ViewUploads
     public void FillViewUploads(){
@@ -400,7 +490,9 @@ public class MainActivity extends AppCompatActivity {
                                     if (FileSelectionTracker.hasSelection()) {
                                         FilesSelected.setText(String.format("Selected: %d", FileSelectionTracker.getSelection().size()));
 
+                                        FileActionSelector.setVisibility(View.VISIBLE);
 
+                                        /*
                                         FileActionSelector.animate()
                                                 .alpha(1.0f)
                                                 .setDuration(200)
@@ -409,7 +501,7 @@ public class MainActivity extends AppCompatActivity {
                                                     public void onAnimationEnd(Animator animation) {
                                                         FileActionSelector.setVisibility(View.VISIBLE);
                                                     }
-                                                });
+                                                });*/
 
 
 
@@ -417,7 +509,16 @@ public class MainActivity extends AppCompatActivity {
 
 
                                     } else {
+
+
+                                        FileActionSelector.setVisibility(View.GONE);
+
                                         FilesSelected.setText("Selected: 0");
+
+                                        /*
+
+
+
                                         FileActionSelector.animate()
                                                 .alpha(0.0f)
                                                 .setDuration(200)
@@ -426,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
                                                     public void onAnimationEnd(Animator animation) {
                                                         FileActionSelector.setVisibility(View.GONE);
                                                     }
-                                                });
+                                                });*/
 
                                     }
 
@@ -620,8 +721,8 @@ public class MainActivity extends AppCompatActivity {
         FileSelectionTracker.clearSelection();
     }
 
-/*
-    public void DownloadFileSelect(View viwe){
+
+    public void DownloadFileSelect(View view){
         Selection<String> selFileID = FileSelectionTracker.getSelection();
 
 
@@ -633,12 +734,119 @@ public class MainActivity extends AppCompatActivity {
 
         while (selIterator.hasNext()){
             reqcount += 1;
-            DeleteFile(selIterator.next(), requestQueue);
+            new DownloadFile(getApplicationContext()).execute(selIterator.next());
         }
 
         FileSelectionTracker.clearSelection();
     }
-*/
+
+
+    private class DownloadFile extends AsyncTask<String, Integer, String> {
+
+
+        Context context;
+
+        SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
+
+        final String ApiKey = sharedPreferences.getString("apikey", "null");
+
+        public DownloadFile(Context context) {
+            this.context = context;
+        }
+
+
+        @Override
+        protected String doInBackground(String... fileID) {
+            InputStream input = null;
+            OutputStream output = null;
+            HttpsURLConnection connection = null;
+
+            FileObj sel = new FileObj("null", "null", "null");
+
+            ApiEndpoint = "https://kelp.ml/u/";
+
+            for (int i = 0; i < FileAdp.Files.size(); i++){
+                FileObj buf = FileAdp.Files.get(i);
+                if (buf.getFileID().equals(fileID[0])){
+                    sel = buf;
+                    break;
+                }
+            }
+
+            try {
+                URL url = new URL(ApiEndpoint+sel.getFileID()+"."+sel.getFileType());
+                connection = (HttpsURLConnection) url.openConnection();
+                connection.connect();
+
+                // expect HTTP 200 OK, so we don't mistakenly save error report
+                // instead of the file
+                if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) {
+                    return "Server returned HTTP " + connection.getResponseCode()
+                            + " " + connection.getResponseMessage();
+                }
+
+                // this will be useful to display download percentage
+                // might be -1: server did not report the length
+                int fileLength = connection.getContentLength();
+
+                // download the file
+                input = connection.getInputStream();
+
+                String homedir = String.valueOf(Environment.getExternalStorageDirectory());
+
+
+                String pathtest = homedir+"/Download/kelp/"+sel.getFileName()+"."+sel.getFileType();
+                Log.d("pathtest", pathtest);
+
+                File out = new File(pathtest);
+                Log.d("pathtest", "file-creation-success");
+                output = new FileOutputStream(out);
+                Log.d("pathtest", "problem solved");
+
+
+                byte data[] = new byte[4096];
+                long total = 0;
+                int count;
+                while ((count = input.read(data)) != -1) {
+                    // allow canceling with back button
+                    if (isCancelled()) {
+                        input.close();
+                        return "good";
+                    }
+                    total += count;
+                    // publishing the progress....
+                    if (fileLength > 0) // only if total length is known
+                        publishProgress((int) (total * 100 / fileLength));
+                    output.write(data, 0, count);
+                }
+            } catch (Exception e) {
+                Log.d("DOWNLOAD EXP", e.toString());
+            } finally {
+                try {
+                    if (output != null)
+                        output.close();
+                    if (input != null)
+                        input.close();
+                } catch (IOException ignored) {
+                }
+
+                if (connection != null)
+                    connection.disconnect();
+            }
+            return null;
+        }
+        @Override
+        protected void onPostExecute(String res){
+            reqcount -= 1;
+            if (reqcount == 0){
+                int duration = Toast.LENGTH_SHORT;
+                Toast toast = Toast.makeText(context, "Download(s) finished." , duration);
+                toast.show();
+            }
+
+        }
+    }
+
 
     public void DeleteFileSelect(View view){
         Selection<String> selFileID = FileSelectionTracker.getSelection();
@@ -850,7 +1058,7 @@ public class MainActivity extends AppCompatActivity {
             final Uri selectedfile = data.getData(); //The uri with the location of the file
 
             Context context = getApplicationContext();
-            File file=FileUtils.getFile(context, selectedfile);
+            String path = FileUtils.getPath(context, selectedfile);
 
             SharedPreferences sharedPreferences = getSharedPreferences("kelpml", Context.MODE_PRIVATE);
 
@@ -864,7 +1072,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(i);
             }
 
-            String path = file.getPath();
 
             new UploadFileAsync().execute(path, ApiKey);
 
@@ -897,6 +1104,7 @@ public class MainActivity extends AppCompatActivity {
                 // Set some UI elements to inform user.
 
                 final String infoMsg = "Uploading file: "+filename;
+
 
                 runOnUiThread(new Runnable(){
 
@@ -1088,33 +1296,36 @@ public class MainActivity extends AppCompatActivity {
 
             // clean up UI elements
 
-            ProgressBar uploadProgress = (ProgressBar) findViewById(R.id.uploadProgress);
-            TextView info = findViewById(R.id.info);
+            try {
+                ProgressBar uploadProgress = (ProgressBar) findViewById(R.id.uploadProgress);
+                TextView info = findViewById(R.id.info);
 
-            uploadProgress.setAlpha(0);
+                uploadProgress.setAlpha(0);
 
-            info.animate()
-                    .alpha(0)
-                    .setDuration(200)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            TextView temp = findViewById(R.id.info);
-                            temp.setText("");
-                        }
-                    });
+                info.animate()
+                        .alpha(0)
+                        .setDuration(200)
+                        .setListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                TextView temp = findViewById(R.id.info);
+                                temp.setText("");
+                            }
+                        });
 
-            uploadProgress.animate()
-                    .alpha(0)
-                    .setDuration(200)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            ProgressBar temp = findViewById(R.id.uploadProgress);
-                            temp.setProgress(0);
-                        }
-                    });
-
+                uploadProgress.animate()
+                        .alpha(0)
+                        .setDuration(200)
+                        .setListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                ProgressBar temp = findViewById(R.id.uploadProgress);
+                                temp.setProgress(0);
+                            }
+                        });
+            } catch (Exception e){
+                Log.e("UI", "Failed to clean up UploadFragment UI elements");
+            }
 
             // check if asyncthread output is a link; copy link to clipboard if true; show error msg if false
 

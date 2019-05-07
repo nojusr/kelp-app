@@ -22,7 +22,8 @@
         android:maxWidth="25dp"
         android:maxLines="1"
         android:paddingLeft="24dp"
-        android:singleLine="true" />
+        android:singleLine="true"
+        android:textColor="@color/foreground" />
 
     <TextView
         android:id="@+id/file_type"
@@ -30,5 +31,6 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:gravity="center_vertical|end"
-        android:paddingRight="24dp" />
+        android:paddingRight="24dp"
+        android:textColor="@color/foreground" />
 </LinearLayout>
